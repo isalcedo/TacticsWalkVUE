@@ -3,17 +3,17 @@
         <div class="__map_zone">
             <div class="__x_grid_flex"
                  v-for="row in rows"
-                 :id="'__row_-_' + row"
-                 :key="'__row_-_' + row">
+                 :id="'__row_-_' + row.index"
+                 :key="'__row_-_' + row.index">
                 <div class="__square"
-                     v-for="square in squares"
-                     @click="squareInfo"
-                     :data-coordinates="row + '-' + square"
-                     :key="'__square_-_'+ row + '-' + square"
-                     :id="'__square_-_' + row + '-' + square">
+                     v-for="square in row.squares"
+                     @click="squareAction"
+                     :data-coordinates="square.index"
+                     :key="'__square_-_'+ square.index"
+                     :id="'__square_-_' + square.index">
                     <img src="/sprites/MarcheNPC.png"
                          alt="Marche NPC"
-                         v-if="square === 1 && row === 1"
+                         v-if="square.withMarche === true"
                          @click="selectMarche">
                 </div>
             </div>
@@ -30,7 +30,6 @@
         data:    function () {
             return {
                 rows:            [],
-                squares:         [],
                 selectingSquare: null,
                 player:          {
                     moveSpaces: 2
@@ -41,27 +40,51 @@
             generateRandomMap() {
                 let xSquares = this.getRandomArbitrary(1, 8),
                     ySquares = this.getRandomArbitrary(1, 8),
-                    yS       = 1,
-                    xS       = 1;
+                    yS       = 1;
 
                 while (yS <= ySquares) {
-                    this.rows.push(yS);
-                    yS++;
-                }
+                    let squares = [],
+                        xS      = 1;
 
-                while (xS <= xSquares) {
-                    this.squares.push(xS);
-                    xS++;
+                    while (xS <= xSquares) {
+                        let square = {
+                            index:      yS + '-' + xS,
+                            withMarche: yS + '-' + xS === '1-1'
+                        };
+
+                        squares.push(square);
+                        xS++;
+                    }
+
+                    let row = {
+                        index:   yS,
+                        squares: squares
+                    };
+
+                    this.rows.push(row);
+                    yS++;
                 }
             },
             getRandomArbitrary(min, max) {
                 return Math.ceil(Math.random() * (max - min) + min);
             },
-            squareInfo(e) {
-                let targetParams = e.target;
+            squareAction(e) {
+                let vueObject    = this;
 
-                if ($(e.target).hasClass('__square')) {
-                    console.log(targetParams);
+                if ($(e.target).hasClass('__square') && $(e.target).hasClass('__walkable')) {
+                    let coordinates = $(e.target).data('coordinates');
+
+                    $.each(vueObject.rows, function (rIndex, row) {
+                        $.each(row.squares, function (sIndex, square) {
+                            if (square.index === coordinates) {
+                                square.withMarche = true;
+                            } else {
+                                square.withMarche = false;
+                            }
+                        });
+                    });
+
+                    $('.__square').removeClass('__walkable');
                 }
             },
             selectMarche(e) {
@@ -74,10 +97,15 @@
 
                 while (i <= this.player.moveSpaces) {
                     movementSquares.push(parentRow + '-' + (parentCol + i));
+                    movementSquares.push(parentRow + '-' + (parentCol - i));
                     movementSquares.push((parentRow + i) + '-' + parentCol);
+                    movementSquares.push((parentRow - i) + '-' + parentCol);
 
                     if (i < this.player.moveSpaces) {
                         movementSquares.push((parentRow + i) + '-' + (parentCol + i));
+                        movementSquares.push((parentRow + i) + '-' + (parentCol - i));
+                        movementSquares.push((parentRow - i) + '-' + (parentCol - i));
+                        movementSquares.push((parentRow - i) + '-' + (parentCol + i));
                     }
                     i++;
                 }
