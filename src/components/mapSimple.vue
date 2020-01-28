@@ -11,6 +11,9 @@
                      :data-coordinates="square.index"
                      :key="'__square_-_'+ square.index"
                      :id="'__square_-_' + square.index">
+                    <span class="__just_number">
+                        {{square.index}}
+                    </span>
                     <img src="/sprites/MarcheNPC.png"
                          alt="Marche NPC"
                          v-if="square.withMarche === true"
@@ -32,14 +35,14 @@
                 rows:            [],
                 selectingSquare: null,
                 player:          {
-                    moveSpaces: 2
+                    moveSpaces: 4
                 }
             }
         },
         methods: {
             generateRandomMap() {
-                let xSquares = this.getRandomArbitrary(1, 8),
-                    ySquares = this.getRandomArbitrary(1, 8),
+                let xSquares = this.getRandomArbitrary(8, 10),
+                    ySquares = this.getRandomArbitrary(8, 10),
                     yS       = 1;
 
                 while (yS <= ySquares) {
@@ -69,7 +72,7 @@
                 return Math.ceil(Math.random() * (max - min) + min);
             },
             squareAction(e) {
-                let vueObject    = this;
+                let vueObject = this;
 
                 if ($(e.target).hasClass('__square') && $(e.target).hasClass('__walkable')) {
                     let coordinates = $(e.target).data('coordinates');
@@ -96,17 +99,21 @@
                     i                 = 1;
 
                 while (i <= this.player.moveSpaces) {
+                    /**
+                     * X axis
+                     */
+                    // +X
                     movementSquares.push(parentRow + '-' + (parentCol + i));
+                    // -X
                     movementSquares.push(parentRow + '-' + (parentCol - i));
-                    movementSquares.push((parentRow + i) + '-' + parentCol);
+                    /**
+                     * Y axis
+                     */
+                    // +Y
                     movementSquares.push((parentRow - i) + '-' + parentCol);
-
-                    if (i < this.player.moveSpaces) {
-                        movementSquares.push((parentRow + i) + '-' + (parentCol + i));
-                        movementSquares.push((parentRow + i) + '-' + (parentCol - i));
-                        movementSquares.push((parentRow - i) + '-' + (parentCol - i));
-                        movementSquares.push((parentRow - i) + '-' + (parentCol + i));
-                    }
+                    movementSquares.push((parentRow - i) + '-' + parentCol + (this.player.moveSpaces - i));
+                    // -Y
+                    movementSquares.push((parentRow + i) + '-' + parentCol);
                     i++;
                 }
 
