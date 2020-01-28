@@ -1,0 +1,30 @@
+@import "~foundation-sites/scss/foundation";
+
+.__map_simple {
+  @include flex();
+  @include flex-align(center, middle);
+}
+
+.__map_zone {
+  @include flex();
+  @include flex-direction(column);
+  @include flex-align(center, middle);
+
+  width: 1024px;
+
+  .__x_grid_flex {
+    @include flex();
+    @include flex-align(center, middle);
+  }
+
+  .__square {
+    width: 30px;
+    height: 30px;
+    padding: 10px;
+    border: 1px solid #efefef;
+
+    &.__walkable {
+      background: #577DA5;
+    }
+  }
+}
