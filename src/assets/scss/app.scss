@@ -15,17 +15,76 @@
   .__x_grid_flex {
     @include flex();
     @include flex-align(center, middle);
+
+    &:last-child {
+      .__square {
+        border-bottom: 1px solid #efefef;
+      }
+    }
   }
 
   .__square {
     width: 30px;
     height: 30px;
     padding: 10px;
-    border: 1px solid #efefef;
     position: relative;
+    border-left: 1px solid #efefef;
+    border-top: 1px solid #efefef;
+    user-select: none;
+
+    .__toon_img_container {
+      @include flex();
+      @include flex-align(center, bottom);
+
+      height: 30px;
+    }
+
+    &:first-child {
+      border-left: 1px solid #efefef;
+      border-top: 1px solid #efefef;
+    }
+
+    &:last-child {
+      border-right: 1px solid #efefef;
+    }
 
     &.__walkable {
-      background: #577DA5;
+      background: #7eb6ee;
+
+      .__just_number {
+        color: #fff;
+      }
+    }
+
+    &.__attainable {
+      background: #ee504d;
+
+      .__just_number {
+        color: #fff;
+      }
+
+      * {
+        pointer-events: none;
+      }
+    }
+
+    .__toon_hp {
+      position: absolute;
+      font-size: 8px;
+      top: -5px;
+      right: -5px;
+      z-index: 9;
+      padding: 2px 4px;
+      background: #4A973E;
+      color: #fff;
+
+      &.__warning {
+        background: #b36e2e;
+      }
+
+      &.__dead {
+        background: #978687;
+      }
     }
 
     .__just_number {

@@ -6,6 +6,7 @@
                  :id="'__row_-_' + row.index"
                  :key="'__row_-_' + row.index">
                 <div class="__square"
+                     :class="{'__w_toon' : square.withToon}"
                      v-for="square in row.squares"
                      @click="squareAction"
                      :data-coordinates="square.index"
@@ -14,10 +15,29 @@
                     <span class="__just_number">
                         {{square.index}}
                     </span>
-                    <img src="/sprites/MarcheNPC.png"
-                         alt="Marche NPC"
-                         v-if="square.withMarche === true"
-                         @click="selectMarche">
+                    <span v-if="square.withToon"
+                          class="__toon_hp"
+                          :class="{
+                        '__warning' : toons[square.withToon.toString()].hp - toons[square.withToon.toString()].damageTaken < ((50 * toons[square.withToon.toString()].hp) / 100),
+                        '__dead' : (toons[square.withToon.toString()].hp - toons[square.withToon.toString()].damageTaken) === 0,
+                    }">
+                        {{toons[square.withToon.toString()].hp - toons[square.withToon.toString()].damageTaken}}
+                        /
+                        {{toons[square.withToon.toString()].hp}}
+                    </span>
+                    <span v-if="square.withToon"
+                          class="__toon_img_container">
+                        <img :src="toons[square.withToon.toString()].sprite"
+                             :alt="square.withToon + ' NPC'"
+                             :data-toon="square.withToon"
+                             v-if="(toons[square.withToon.toString()].hp - toons[square.withToon.toString()].damageTaken) > 0"
+                             @click="selectToon">
+                        <img :src="toons[square.withToon.toString()].dSprite"
+                             :alt="square.withToon + ' NPC'"
+                             :data-toon="square.withToon"
+                             v-else
+                             @click="selectToon">
+                    </span>
                 </div>
             </div>
         </div>
@@ -34,15 +54,31 @@
             return {
                 rows:            [],
                 selectingSquare: null,
-                player:          {
-                    moveSpaces: 4
+                activeToonIndex: null,
+                toons:           {
+                    marche: {
+                        hp:          80,
+                        damageTaken: 0,
+                        attackPower: 5,
+                        moveSpaces:  3,
+                        sprite:      '/sprites/MarcheNPC.png',
+                        dSprite:     '/sprites/MarcheDead.png'
+                    },
+                    judge:  {
+                        hp:          120,
+                        damageTaken: 0,
+                        attackPower: 8,
+                        moveSpaces:  5,
+                        sprite:      '/sprites/JudgeNPC.png',
+                        dSprite:     '/sprites/JudgeDead.png'
+                    }
                 }
             }
         },
         methods: {
             generateRandomMap() {
-                let xSquares = this.getRandomArbitrary(8, 10),
-                    ySquares = this.getRandomArbitrary(8, 10),
+                let xSquares = this.getRandomArbitrary(1, 12),
+                    ySquares = this.getRandomArbitrary(1, 12),
                     yS       = 1;
 
                 while (yS <= ySquares) {
@@ -51,9 +87,17 @@
 
                     while (xS <= xSquares) {
                         let square = {
-                            index:      yS + '-' + xS,
-                            withMarche: yS + '-' + xS === '1-1'
+                            index:    yS + '-' + xS,
+                            withToon: null
                         };
+
+                        if (yS + '-' + xS === '1-1') {
+                            square.withToon = 'marche';
+                        }
+
+                        if (xS === xSquares && yS === ySquares) {
+                            square.withToon = 'judge';
+                        }
 
                         squares.push(square);
                         xS++;
@@ -80,45 +124,119 @@
                     $.each(vueObject.rows, function (rIndex, row) {
                         $.each(row.squares, function (sIndex, square) {
                             if (square.index === coordinates) {
-                                square.withMarche = true;
+                                square.withToon = vueObject.activeToonIndex;
                             } else {
-                                square.withMarche = false;
+                                if (square.withToon === vueObject.activeToonIndex) {
+                                    square.withToon = null;
+                                }
                             }
                         });
                     });
 
                     $('.__square').removeClass('__walkable');
                 }
+
+                if ($(e.target).hasClass('__square') && $(e.target).hasClass('__attainable')) {
+                    let activeToon     = vueObject.toons[vueObject.activeToonIndex],
+                        otherToonIndex = $(e.target).find('img').data('toon'),
+                        otherToon      = vueObject.toons[otherToonIndex];
+
+                    if (otherToon.damageTaken < otherToon.hp) {
+                        otherToon.damageTaken += activeToon.attackPower;
+                    } else {
+                        otherToon.damageTaken = otherToon.hp;
+                    }
+                }
+
+                if ($(e.target).hasClass('__square') && !$(e.target).hasClass('__walkable') && !$(e.target).hasClass('__attainable')) {
+                    vueObject.activeToonIndex = null;
+                    $('.__square').removeClass('__walkable');
+                    $('.__square').removeClass('__attainable');
+                }
             },
-            selectMarche(e) {
-                let parentSquare      = $(e.target).parent('.__square'),
+            selectToon(e) {
+                let toonIndex         = $(e.target).data('toon'),
+                    moveSpaces        = this.toons[toonIndex].moveSpaces,
+                    parentSquare      = $(e.target).parents('.__square'),
                     parentCoordinates = parentSquare.data('coordinates').split('-'),
                     parentRow         = parseInt(parentCoordinates[0]),
                     parentCol         = parseInt(parentCoordinates[1]),
                     movementSquares   = [],
                     i                 = 1;
+                this.activeToonIndex  = toonIndex;
+                $('.__square').removeClass('__walkable');
 
-                while (i <= this.player.moveSpaces) {
+                while (i <= moveSpaces) {
                     /**
                      * X axis
                      */
                     // +X
                     movementSquares.push(parentRow + '-' + (parentCol + i));
+                    let squarePosition = moveSpaces - i,
+                        colToRun       = parentCol + squarePosition,
+                        squaresToAdd   = moveSpaces - squarePosition,
+                        squaresCounter = 1;
+
+                    while (squaresCounter <= squaresToAdd) {
+                        let coordinates = (parentRow + squaresCounter) + '-' + colToRun;
+                        if (!movementSquares.includes(coordinates)) {
+                            movementSquares.push(coordinates);
+                        }
+                        squaresCounter++;
+                    }
                     // -X
-                    movementSquares.push(parentRow + '-' + (parentCol - i));
+                    let coordinates = parentRow + '-' + (parentCol - i);
+                    if (!movementSquares.includes(coordinates)) {
+                        movementSquares.push(coordinates);
+                    }
+                    squarePosition = moveSpaces - i; //3
+                    colToRun       = parentCol - squarePosition;
+                    squaresToAdd   = moveSpaces - squarePosition;
+                    squaresCounter = 1;
+
+                    while (squaresCounter <= squaresToAdd) {
+                        let coordinates = (parentRow + squaresCounter) + '-' + colToRun;
+                        if (!movementSquares.includes(coordinates)) {
+                            movementSquares.push(coordinates);
+                        }
+                        squaresCounter++;
+                    }
                     /**
                      * Y axis
                      */
                     // +Y
                     movementSquares.push((parentRow - i) + '-' + parentCol);
-                    movementSquares.push((parentRow - i) + '-' + parentCol + (this.player.moveSpaces - i));
-                    // -Y
-                    movementSquares.push((parentRow + i) + '-' + parentCol);
+                    squarePosition = moveSpaces - i;
+                    if (squarePosition > 0) {
+                        let rowToRun   = parentRow - squarePosition;
+                        squaresToAdd   = moveSpaces - squarePosition;
+                        squaresCounter = 1;
+
+                        while (squaresCounter <= squaresToAdd) {
+                            let coordinates = rowToRun + '-' + (parentCol - squaresCounter);
+                            if (!movementSquares.includes(coordinates)) {
+                                movementSquares.push(coordinates);
+                            }
+
+                            coordinates = rowToRun + '-' + (parentCol + squaresCounter);
+                            if (!movementSquares.includes(coordinates)) {
+                                movementSquares.push(coordinates);
+                            }
+
+                            squaresCounter++;
+                        }
+                    }
                     i++;
                 }
 
                 $.each(movementSquares, function (index, val) {
-                    $('#__square_-_' + val).addClass('__walkable');
+                    let selector = $('#__square_-_' + val);
+
+                    if (!selector.hasClass('__w_toon')) {
+                        selector.addClass('__walkable');
+                    } else {
+                        selector.addClass('__attainable');
+                    }
                 });
             }
         },
