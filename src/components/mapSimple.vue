@@ -150,8 +150,10 @@
 
                 if ($(e.target).hasClass('__square') && !$(e.target).hasClass('__walkable') && !$(e.target).hasClass('__attainable')) {
                     vueObject.activeToonIndex = null;
-                    $('.__square').removeClass('__walkable');
-                    $('.__square').removeClass('__attainable');
+                    let squaresClass          = '.__square';
+
+                    $(squaresClass).removeClass('__walkable');
+                    $(squaresClass).removeClass('__attainable');
                 }
             },
             selectToon(e) {
