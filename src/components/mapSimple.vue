@@ -139,10 +139,17 @@
                 if ($(e.target).hasClass('__square') && $(e.target).hasClass('__attainable')) {
                     let activeToon     = vueObject.toons[vueObject.activeToonIndex],
                         otherToonIndex = $(e.target).find('img').data('toon'),
-                        otherToon      = vueObject.toons[otherToonIndex];
+                        otherToon      = vueObject.toons[otherToonIndex],
+                        punchAudio     = new Audio('/sounds/punch.mp3'),
+                        deathAudio     = new Audio('/sounds/death.mp3');
 
                     if (otherToon.damageTaken < otherToon.hp) {
                         otherToon.damageTaken += activeToon.attackPower;
+                        if ((otherToon.hp - otherToon.damageTaken) < activeToon.attackPower) {
+                            deathAudio.play();
+                        } else {
+                            punchAudio.play();
+                        }
                     } else {
                         otherToon.damageTaken = otherToon.hp;
                     }
